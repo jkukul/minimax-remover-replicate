@@ -1,0 +1,41 @@
+name: Push model to Replicate
+
+# This workflow is triggered manually from the GitHub website.
+# To run it, click the "Actions" tab on the repo page.
+on:
+  workflow_dispatch:
+jobs:
+  push_to_replicate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      #to save disk space due to large image size
+      - name: Cleanup unused docker images
+        run: |
+          sudo apt autoremove --purge
+          sudo apt autoclean
+          sudo apt clean
+          docker system prune -af
+      #to save disk space due to large image size
+      - name: CleanUp hostedtoolcache
+        run: rm -rf /opt/hostedtoolcache
+      - name: Install Cog
+        run: |
+          sudo curl -o /usr/local/bin/cog -L https://github.com/replicate/cog/releases/download/v0.16.9/cog_Linux_x86_64
+          sudo chmod +x /usr/local/bin/cog
+          cog --version
+      - name: Log in to Replicate
+        env:
+          REPLICATE_CLI_TOKEN: ${{ secrets.REPLICATE_CLI_TOKEN }}
+        run: |
+          echo $REPLICATE_CLI_TOKEN | cog login --token-stdin
+      - name: clone sub-repository
+        run: |
+          git clone https://github.com/jkukul/MiniMax-Remover.git minimax_remover
+      - name: Download model weights
+        run: |
+          cog run ./download_weights.py
+      - name: Push to Replicate
+        run: |
+          cog push r8.im/jkukul/minimax-remover

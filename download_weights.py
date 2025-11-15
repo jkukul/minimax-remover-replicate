@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Download MiniMax-Remover model weights from Hugging Face Hub
 """
