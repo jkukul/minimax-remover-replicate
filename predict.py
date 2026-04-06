@@ -136,9 +136,14 @@ class Predictor(BasePredictor):
         else:
             actual_height, actual_width = calculate_safe_resolution(height, width)
         
+        # Round up to next multiple of 16 for inference (VAE spatial factor 8 * transformer patch factor 2)
+        # Output will be cropped back to actual_height x actual_width
+        proc_height = ((actual_height + 15) // 16) * 16
+        proc_width = ((actual_width + 15) // 16) * 16
+
         # Determine FPS
         output_fps = calculate_output_fps(original_info['fps'], fps)
-        
+
         print(f"📹 Processing {actual_frames} frames at {actual_width}x{actual_height}")
         print(f"🎬 Output FPS: {output_fps} (original: {original_info['fps']:.1f})")
         print(f"⚙️ Quality: {num_inference_steps} inference steps")
@@ -169,13 +174,17 @@ class Predictor(BasePredictor):
                 images=video_frames,
                 masks=mask_frames,
                 num_frames=min_frames,
-                height=actual_height,
-                width=actual_width,
+                height=proc_height,
+                width=proc_width,
                 num_inference_steps=num_inference_steps,
                 generator=generator,
                 iterations=mask_dilation_iterations
             ).frames[0]
-            
+
+            # Crop padded rows/cols back to the target resolution
+            if proc_height != actual_height or proc_width != actual_width:
+                result = [frame[:actual_height, :actual_width] for frame in result]
+
             print("Inference completed successfully!")
             
         except Exception as e:
