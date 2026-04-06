@@ -1,9 +1,10 @@
 name: Push model to Replicate
 
-# This workflow is triggered manually from the GitHub website.
-# To run it, click the "Actions" tab on the repo page.
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 jobs:
   push_to_replicate:
     runs-on: ubuntu-latest
